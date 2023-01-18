@@ -39,6 +39,7 @@ let userCount = 0;
 let readyCount = 0;
 
 io.on("connection", async (socket) => {
+  console.log("connect",socket.id);
   socket.onAny(async (e) => {
     console.log(`SocketEvent:${e}`);
   });
