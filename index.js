@@ -75,26 +75,29 @@ io.on("connection", async (socket) => {
       `rooms:${roomId}:users:${socket.userId}`
     );
 
+    await client.hDel(`rooms:${roomId}`, "ready");
+
     await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
       isReady: userInfo.isReady === "false" ? "true" : "false",
     });
 
-    if (userInfo.isReady === "false") {   //{userId:userId}
+    if (userInfo.isReady === "false") {
+      //{userId:userId}
       // `userId`
-      const some = userId;    
-      await client.hSet(`rooms:${roomId}`, {[userId]:some} );
+      const some = userId;
+      await client.hSet(`rooms:${roomId}`, { [userId]: some });
       const test2 = await client.hGetAll(`rooms:${roomId}`);
       console.log("추가", test2);
 
       const userLength = await client.hLen(`rooms:${roomId}`);
-      console.log("userLength",userLength)
+      console.log("userLength", userLength);
 
-      if(userLength > 3){
+      if (userLength > 2) {
         io.to(roomId).emit("game-start");
       }
-
     } else {
-      await client.hDel(`rooms:${roomId}`, `${userId}` );
+      await client.hDel(`rooms:${roomId}`, `${userId}`);
+
       const test2 = await client.hGetAll(`rooms:${roomId}`);
       console.log("삭제", test2);
     }
