@@ -44,64 +44,63 @@ io.on("connection", async (socket) => {
     console.log(`SocketEvent:${e}`);
   });
 
-  socket.on("you-joined", async ({ userId, roomId }) => {
-    socket["userId"] = userId;
+  socket.on("you-joined", async ({ userID, roomID }) => {
+    socket["userID"] = userID;
     userCount = (userCount + 1) % 4;
     console.log("유저 입장", userCount, ":::::", socket.id);
 
-    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
-      userId: socket.userId,
+    await client.hSet(`rooms:${roomID}:users:${socket.userID}`, {
+      userID: socket.userID,
     });
-    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+    await client.hSet(`rooms:${roomID}:users:${socket.userID}`, {
       socketId: socket.id,
     });
-    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+    await client.hSet(`rooms:${roomID}:users:${socket.userID}`, {
       username: userCount,
     });
-    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+    await client.hSet(`rooms:${roomID}:users:${socket.userID}`, {
       isReady: "false",
     });
-    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+    await client.hSet(`rooms:${roomID}:users:${socket.userID}`, {
       yourSeat: userCount,
     });
     const roomInfo = await client.hGetAll(
-      `rooms:${roomId}:users:${socket.userId}`
+      `rooms:${roomID}:users:${socket.userID}`
     );
     console.log(roomInfo);
   });
 
-  socket.on("ready", async ({ userId, roomId }) => {
+  socket.on("ready", async ({ userID, roomID }) => {
     // FIXME: 변수 -> redis.lenth로 변경 필요
     const userInfo = await client.hGetAll(
-      `rooms:${roomId}:users:${socket.userId}`
+      `rooms:${roomID}:users:${socket.userID}`
     );
 
-    console.log("userId:",userId , typeof(userId));
-    console.log("roomId:",roomId, typeof(roomId));
-   
+    console.log("userID:", userID, typeof userID);
+    console.log("roomID:", roomID, typeof roomID);
 
-    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+    await client.hSet(`rooms:${roomID}:users:${socket.userID}`, {
       isReady: userInfo.isReady === "false" ? "true" : "false",
     });
 
     if (userInfo.isReady === "false") {
       //{userId:userId}
       // `userId`
-      const some = userId;
-      await client.hSet(`rooms:${roomId}`, { [userId]: some });
-      const test2 = await client.hGetAll(`rooms:${roomId}`);
+      const some = userID;
+      await client.hSet(`rooms:${roomID}`, { [userID]: some });
+      const test2 = await client.hGetAll(`rooms:${roomID}`);
       console.log("추가", test2);
 
-      const userLength = await client.hLen(`rooms:${roomId}`);
+      const userLength = await client.hLen(`rooms:${roomID}`);
       console.log("userLength", userLength);
 
       if (userLength > 2) {
-        io.to(roomId).emit("game-start");
+        io.to(roomID).emit("game-start");
       }
     } else {
-      await client.hDel(`rooms:${roomId}`, `${userId}`);
+      await client.hDel(`rooms:${roomID}`, `${userID}`);
 
-      const test2 = await client.hGetAll(`rooms:${roomId}`);
+      const test2 = await client.hGetAll(`rooms:${roomID}`);
       console.log("삭제", test2);
     }
 
