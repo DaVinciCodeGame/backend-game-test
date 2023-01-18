@@ -43,8 +43,9 @@ io.on("connection", async (socket) => {
     console.log(`SocketEvent:${e}`);
   });
 
-  socket.on("user-connection", async ({ userId, roomId }) => {
-    socket["userId"] = userCount++;
+  socket.on("you-joined", async ({ userId, roomId }) => {
+    socket["userId"] = userId;
+    userCount = (userCount + 1) % 4;
     console.log("유저 입장", userCount, ":::::", socket.id);
 
     await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
@@ -78,9 +79,10 @@ io.on("connection", async (socket) => {
       await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
         isReady: "true",
       });
+
       readyCount = readyCount + 1;
       await client.hSet(`rooms:${roomId}`, { ready: readyCount });
-      const test = await client.hGetAll(`rooms:${roomId}`);
+      const ready = await client.hGetAll(`rooms:${roomId}`);
 
       if (readyCount > 3) {
         // room 초기화
@@ -91,8 +93,14 @@ io.on("connection", async (socket) => {
             value: `${i}`,
             isOpened: "false",
           });
-          
+
+          await client.hSet(`rooms:${roomId}:table:white`, {
+            color: "white",
+            value: `${i}`,
+            isOpened: "false",
+          });
         }
+
         io.to(roomId).emit("game-start");
       }
     } else {
@@ -102,12 +110,17 @@ io.on("connection", async (socket) => {
 
       readyCount = readyCount - 1;
       await client.hSet(`rooms:${roomId}`, { ready: readyCount });
-      const test = await client.hGetAll(`rooms:${roomId}`);
+      const ready = await client.hGetAll(`rooms:${roomId}`);
+      console.log(ready);
     }
   });
 
-  socket.on("first-draw", ({ userId, black, roomId }) => {
+  socket.on("first-draw", async ({ userId, black, roomId }) => {
     const whiteCard = 3 - black;
+
+    console.log("socket ids:", socket.id);
+    const tableWhiteCard = await client.hGetAll(`rooms:${roomId}:table:white`);
+    console.log("tableWhiteCard test console :::", tableWhiteCard);
 
     let count = 0;
     let arr1 = [];
@@ -181,11 +194,9 @@ io.on("connection", async (socket) => {
     }
   });
 
- 
-
   socket.on("send_message", (msg, room, addMyMessage) => {
-    console.log(msg)
-    console.log(room)
+    console.log(msg);
+    console.log(room);
 
     socket.to(room).emit("receive_message", msg);
     addMyMessage(msg);
@@ -229,12 +240,6 @@ io.on("connection", async (socket) => {
       room = room.filter((id) => id !== socket.id);
       users[roomID] = room;
     }
-  });
-
-  
-
-  socket.on("gameStart", (roomId, userId) => {
-    socket["userId"] = socket.id;
   });
 
   socket.on("selectFirstCard", ({ userId, black, roomId }, addMyCard) => {
