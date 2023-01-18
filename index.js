@@ -93,7 +93,7 @@ io.on("connection", async (socket) => {
 
       let userLength = await client.hLen(`rooms:${roomID}`);
       userLength = 2;
-      
+
       if (userLength ==  2) {
         console.log("test")
         // 유저 별로 socket.Id 찾아서 뿌려주기.
@@ -148,6 +148,11 @@ io.on("connection", async (socket) => {
 
   socket.on("first-draw", async ({ userId, black, roomId }) => {
     const whiteCard = 3 - black;
+
+    console.log("userId", userId)
+    console.log("black", black)
+    console.log("roomId", roomId)
+ 
 
     console.log("socket ids:", socket.id);
     const tableWhiteCard = await client.hGetAll(`rooms:${roomId}:table:white`);
