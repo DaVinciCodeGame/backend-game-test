@@ -184,6 +184,9 @@ io.on("connection", async (socket) => {
  
 
   socket.on("send_message", (msg, room, addMyMessage) => {
+    console.log(msg)
+    console.log(room)
+
     socket.to(room).emit("receive_message", msg);
     addMyMessage(msg);
   });
