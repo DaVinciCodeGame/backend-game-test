@@ -91,11 +91,13 @@ io.on("connection", async (socket) => {
       const test2 = await client.hGetAll(`rooms:${roomID}`);
       console.log("추가", test2);
 
-      const userLength = await client.hLen(`rooms:${roomID}`);
-      console.log("userLength", userLength);
-
+      let userLength = await client.hLen(`rooms:${roomID}`);
+      userLength = 2;
+      
       if (userLength ==  2) {
-        io.to(roomID).emit("game-start");
+        console.log("test")
+        // 유저 별로 socket.Id 찾아서 뿌려주기.
+        io.to(socket.id).emit("game-start");
       }
     } else {
       await client.hDel(`rooms:${roomID}`, `${userID}`);
