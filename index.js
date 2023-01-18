@@ -183,7 +183,7 @@ io.on("connection", async (socket) => {
 
  
 
-  socket.on("send_message", (room, msg, addMyMessage) => {
+  socket.on("send_message", (msg, room, addMyMessage) => {
     socket.to(room).emit("receive_message", msg);
     addMyMessage(msg);
   });
