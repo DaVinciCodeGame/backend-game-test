@@ -94,7 +94,7 @@ io.on("connection", async (socket) => {
       const userLength = await client.hLen(`rooms:${roomID}`);
       console.log("userLength", userLength);
 
-      if (userLength > 2) {
+      if (userLength ==  2) {
         io.to(roomID).emit("game-start");
       }
     } else {
