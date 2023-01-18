@@ -6,6 +6,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const { createClient } = require("redis");
 const { log } = require("console");
+const { type } = require("os");
 
 dotenv.config();
 app.use(cors());
@@ -75,7 +76,9 @@ io.on("connection", async (socket) => {
       `rooms:${roomId}:users:${socket.userId}`
     );
 
-    await client.hDel(`rooms:${roomId}`, "ready");
+    console.log("userId:",userId , typeof(userId));
+    console.log("roomId:",roomId, typeof(roomId));
+   
 
     await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
       isReady: userInfo.isReady === "false" ? "true" : "false",
