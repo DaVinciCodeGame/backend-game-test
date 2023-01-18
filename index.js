@@ -191,7 +191,7 @@ io.on("connection", async (socket) => {
     addMyMessage(msg);
   });
 
-  socket.on("joinRtcRoom", (roomID) => {
+  socket.on("joined", (roomID) => {
     if (users[roomID]) {
       const length = users[roomID].length;
       if (length === 4) {
