@@ -35,135 +35,79 @@ const io = new Server(server, {
   },
 });
 
-const users = {};
-const socketToRoom = {};
+let userCount = 0;
+let readyCount = 0;
 
-const data = [];
-let whiteCard = 0;
-let sampleData = [
-  {
-    roomId: 3,
-    blackCardList: [null, 1, 1, 1, 2, 2, 2, null, null, null, null, null, null],
-    whiteCardList: [null, 4, 4, 4, 3, 3, 3, null, null, null, null, null, null],
-    roomData: [
-      {
-        userId: 4,
-        gameSids: "12D73jwD0ioJeJLGAAAD",
-        cards: [
-          { color: "white", value: 1 },
-          { color: "white", value: 2 },
-          { color: "white", value: 3 },
-        ],
-      },
-      {
-        userId: 1,
-        gameSids: "12D73jwD0ioJeJLGAAAC",
-        cards: [
-          { color: "black", value: 1 },
-          { color: "black", value: 2 },
-          { color: "black", value: 3 },
-        ],
-      },
-      {
-        userId: 2,
-        gameSids: "12D73jwD0ioJeJLGAYFE",
-        cards: [
-          { color: "black", value: 4 },
-          { color: "black", value: 5 },
-          { color: "black", value: 6 },
-        ],
-      },
-      {
-        userId: 3,
-        gameSids: "12D73jwD0ioJeJLGAAAD",
-        cards: [
-          { color: "white", value: 4 },
-          { color: "white", value: 5 },
-          { color: "white", value: 6 },
-        ],
-      },
-    ],
-  },
-];
-
-let countBlack = 0;
-let countWhite = 0;
-let gamingUser = [];
-
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   socket.onAny(async (e) => {
     console.log(`SocketEvent:${e}`);
   });
 
+  socket.on("user-connection", async ({ userId, roomId }) => {
+    socket["userId"] = userCount++;
+    console.log("유저 입장", userCount, ":::::", socket.id);
+
+    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+      userId: socket.userId,
+    });
+    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+      socketId: socket.id,
+    });
+    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+      username: userCount,
+    });
+    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+      isReady: "false",
+    });
+    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+      yourSeat: userCount,
+    });
+    const roomInfo = await client.hGetAll(
+      `rooms:${roomId}:users:${socket.userId}`
+    );
+    console.log(roomInfo);
+  });
+
+  socket.on("ready-to-join", async ({ userId, roomId }) => {
+    const userInfo = await client.hGetAll(
+      `rooms:${roomId}:users:${socket.userId}`
+    );
+
+    if (userInfo.isReady === "false") {
+      await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+        isReady: "true",
+      });
+      readyCount = readyCount + 1;
+      await client.hSet(`rooms:${roomId}`, { ready: readyCount });
+      const test = await client.hGetAll(`rooms:${roomId}`);
+      console.log("+했을때 값 확인", test);
+      if (readyCount > 3) {
+        io.to(roomId).emit("game-start");
+        console.log("게임 시작");
+      }
+    } else {
+      await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+        isReady: "false",
+      });
+
+      readyCount = readyCount - 1;
+      await client.hSet(`rooms:${roomId}`, { ready: readyCount });
+
+      const test = await client.hGetAll(`rooms:${roomId}`);
+      console.log("-했을때 값 확인", test);
+    }
+  });
+
+  socket.on("first-draw", ({ userId, black, roomId }) => {});
+
+  // TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:
+  // TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:
+  // TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:
+  // TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:
+
   socket.on("send_message", (data, addMyMessage) => {
     socket.to(data.room).emit("receive_message", data.msg);
     addMyMessage(data.msg);
-  });
-
-  socket.on("join_room", ({ roomId, userId, people }, gameStartFn) => {
-    socket["userId"] = userId;
-
-    socket.join(roomId);
-
-    if (data.find((el) => el.roomId === roomId)) {
-      data.map((el) => {
-        if (el.roomId === roomId) {
-          el.roomData.push({ userId, gameSids: socket.id });
-        }
-      });
-    } else {
-      data.push({
-        roomId,
-        blackCardList: new Array(13).fill(null),
-        whiteCardList: new Array(13).fill(null),
-        roomData: [{ userId, gameSids: socket.id }],
-      });
-    }
-
-    data.map((el) => {
-      if (el.roomData.length === people) {
-        socket.to(roomId).emit("gameStart", "gameStart");
-        gameStartFn();
-      }
-    });
-  });
-
-  socket.on("getPlace", ({ roomId, userId, people }, fn) => {
-    data.map((el) => {
-      if (el.roomId == roomId && el.roomData.length === people) {
-        let count = 0;
-        let userTemp = [];
-
-        for (let i = 0; i < people; i++) {
-          if (el.roomData[i].userId === userId) {
-            for (let j = 2; j < people; j = (j + 1) % people) {
-              userTemp.push(el.roomData[j]);
-              count++;
-              if (count === people) {
-                break;
-              }
-            }
-            if (count === people) {
-              break;
-            }
-          }
-        }
-
-        el.roomData = userTemp;
-        fn(data);
-      }
-    });
-  });
-
-  socket.on("nickName", (nickName) => {
-    socket["nickName"] = nickName;
-  });
-
-  socket.on("whisper", (nickName, msg, addMyMessage) => {
-    const targetSoc = [...io.sockets.sockets];
-    const target = targetSoc.filter((el) => el[1].nickName === nickName);
-    if (target[0][0]) socket.to(target[0][0]).emit("receive_message", msg);
-    addMyMessage(msg);
   });
 
   socket.on("joinRtcRoom", (roomID) => {
@@ -204,6 +148,11 @@ io.on("connection", (socket) => {
       users[roomID] = room;
     }
   });
+
+  // TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:
+  // TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:
+  // TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:
+  // TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:TODO:
 
   socket.on("gameStart", (roomId, userId) => {
     socket["userId"] = socket.id;
