@@ -86,11 +86,12 @@ io.on("connection", async (socket) => {
         // room 초기화
         // 명령어를 못찾는 이유
         for (let i = 0; i < 13; i++) {
-          await client.hmset(`rooms:${roomId}:table:black`, {
-            color: black,
-            value: i,
-            isOpened: false,
+          await client.hSet(`rooms:${roomId}:table:black`, {
+            color: "black",
+            value: `${i}`,
+            isOpened: "false",
           });
+          
         }
         io.to(roomId).emit("game-start");
       }
@@ -182,9 +183,9 @@ io.on("connection", async (socket) => {
 
  
 
-  socket.on("send_message", (data, addMyMessage) => {
-    socket.to(data.room).emit("receive_message", data.msg);
-    addMyMessage(data.msg);
+  socket.on("send_message", (room, msg, addMyMessage) => {
+    socket.to(room).emit("receive_message", msg);
+    addMyMessage(msg);
   });
 
   socket.on("joinRtcRoom", (roomID) => {
