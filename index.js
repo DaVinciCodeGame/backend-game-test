@@ -85,6 +85,14 @@ io.on("connection", async (socket) => {
       await client.hSet(`rooms:${roomId}`, {[userId]:some} );
       const test2 = await client.hGetAll(`rooms:${roomId}`);
       console.log("추가", test2);
+
+      const userLength = await client.hLen(`rooms:${roomId}`);
+      console.log("userLength",userLength)
+
+      if(userLength > 3){
+        io.to(roomId).emit("game-start");
+      }
+
     } else {
       await client.hDel(`rooms:${roomId}`, `${userId}` );
       const test2 = await client.hGetAll(`rooms:${roomId}`);
