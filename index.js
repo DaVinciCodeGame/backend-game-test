@@ -75,44 +75,60 @@ io.on("connection", async (socket) => {
       `rooms:${roomId}:users:${socket.userId}`
     );
 
-    if (userInfo.isReady === "false") {
-      await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
-        isReady: "true",
-      });
+    await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+      isReady: userInfo.isReady === "false" ? "true" : "false",
+    });
 
-      readyCount = readyCount + 1;
-      await client.hSet(`rooms:${roomId}`, { ready: readyCount });
-      const ready = await client.hGetAll(`rooms:${roomId}`);
-
-      if (readyCount > 3) {
-        // room 초기화
-        // 명령어를 못찾는 이유
-        for (let i = 0; i < 13; i++) {
-          await client.hSet(`rooms:${roomId}:table:black`, {
-            color: "black",
-            value: `${i}`,
-            isOpened: "false",
-          });
-
-          await client.hSet(`rooms:${roomId}:table:white`, {
-            color: "white",
-            value: `${i}`,
-            isOpened: "false",
-          });
-        }
-
-        io.to(roomId).emit("game-start");
-      }
+    if (userInfo.isReady === "false") {   //{userId:userId}
+      // `userId`
+      const some = userId;    
+      await client.hSet(`rooms:${roomId}`, {[userId]:some} );
+      const test2 = await client.hGetAll(`rooms:${roomId}`);
+      console.log("추가", test2);
     } else {
-      await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
-        isReady: "false",
-      });
-
-      readyCount = readyCount - 1;
-      await client.hSet(`rooms:${roomId}`, { ready: readyCount });
-      const ready = await client.hGetAll(`rooms:${roomId}`);
-      console.log(ready);
+      await client.hDel(`rooms:${roomId}`, `${userId}` );
+      const test2 = await client.hGetAll(`rooms:${roomId}`);
+      console.log("삭제", test2);
     }
+
+    //console.log(userInfo);
+
+    //   readyCount = readyCount + 1;
+
+    //   await client.hSet(`rooms:${roomId}`, { userId });
+    //   const ready = await client.hGetAll(`rooms:${roomId}`);
+    //   console.log("+일 때 ready 값: ", ready);
+
+    // if (readyCount > 3) {
+    //   // room 초기화
+    //   for (let i = 0; i < 13; i++) {
+    //     await client.hSet(`rooms:${roomId}:table:black`, {
+    //       color: "black",
+    //       value: `${i}`,
+    //       isOpened: "false",
+    //     });
+
+    //     await client.hSet(`rooms:${roomId}:table:white`, {
+    //       color: "white",
+    //       value: `${i}`,
+    //       isOpened: "false",
+    //     });
+    //   }
+
+    //   io.to(roomId).emit("game-start");
+    // }
+    //}
+
+    // else {
+    //   await client.hSet(`rooms:${roomId}:users:${socket.userId}`, {
+    //     isReady: "false",
+    //   });
+
+    //   readyCount = readyCount - 1;
+    //   await client.hDel(`rooms:${roomId}`, { userId });
+    //   const ready = await client.hGetAll(`rooms:${roomId}`);
+    //   console.log("-일 때 ready 값: ", ready);
+    // }
   });
 
   socket.on("first-draw", async ({ userId, black, roomId }) => {
