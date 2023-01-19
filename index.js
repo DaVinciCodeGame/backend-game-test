@@ -38,11 +38,20 @@ const io = new Server(server, {
 let userCount = 0;
 let readyCount = 0;
 
+//DB room 에 userId, table에 blackCards[] , whiteCards[]
+//DB user 에 userId(key)으로 socketId, userName, isReady, isAlive, hand: Card[];
+ 
+
 io.on("connection", async (socket) => {
   console.log("connect", socket.id);
   socket.onAny(async (e) => {
     console.log(`SocketEvent:${e}`);
   });
+    socket.on("connect", ({ userId }) =>{
+        //DB room 돌면서 userId 있는지 확인하고 삭제
+        
+    })
+
 
   socket.on("you-joined", async ({ userID, roomID }) => {
     socket["userID"] = userID;
@@ -238,8 +247,9 @@ io.on("connection", async (socket) => {
     addMyMessage(msg);
   });
 
-  socket.on("joined", (roomID) => {
-    socket.join(roomID);
+  socket.on("joined", (roomId) => {
+    console.log(roomId);
+    socket.join(roomId);
     // if (users[roomID]) {
     //   const length = users[roomID].length;
     //   if (length === 4) {
@@ -339,7 +349,7 @@ io.on("connection", async (socket) => {
     const userIdAndCard = { userId, cards: socket.card };
 
     for (let i = 0; i < data.length; i++) {
-      //오류난 부분 체크필요 ㄱ
+      // FIXME: error
       if (data[flag].roomData[i].userId == userId) {
         data[flag].roomData[i].cards = socket.card;
         break;
