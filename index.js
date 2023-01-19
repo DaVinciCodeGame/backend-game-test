@@ -38,29 +38,6 @@ const io = new Server(server, {
 let userCount = 0;
 let readyCount = 0;
 
-// let DB = [
-// {
-//   rooms: [
-//     {
-//       roomId: 0,
-//       blackCards: new Array(13).fill(null),
-//       whiteCards: new Array(13).fill(null), // [ {color: black, value: 3 , isOpen: true}, {color: black, value: 3 , isOpen: true}, {color: black, value: 3 , isOpen: true} ]
-//       users: [], //[{userId:1}, {userId:4}, {userId:3}, {userId:2}]
-//     },
-//   ],
-//   users: [
-//     {
-//       userId,
-//       sids,
-//       username,
-//       isReady,
-//       isAlive,
-//       hand: [],
-//     },
-//   ],
-//   }
-// ];
-
 let DB = [
   {
     roomId: 0,
@@ -83,9 +60,6 @@ let DB = [
     ],
   },
 ];
-
-let countBlack = 0;
-let countWhite = 0;
 
 io.on("connection", async (socket) => {
   console.log("connect", socket.id);
@@ -169,73 +143,66 @@ io.on("connection", async (socket) => {
     }
   });
 
-  socket.on("first-draw", async (userId, black, roomId, fn) => {
-    console.log(DB[0].table.blackCards);
+  socket.on("first-draw", async (userId, black, roomId, myCard) => {
     // fn (본인 카드 & 잔여 카드 )
     // socket.to(roomId).emit("all-users-cards", [사람들 카드 + 잔여 카드])
     const white = 3 - black;
 
-    let count = 0;
     let getCards = [];
-    let flag = 0;
+    let roomIndex = 0;
+    let uesrIndex = 0;
 
     for (let j = 0; j < DB.length; j++) {
       if (DB[j].roomId === roomId) {
-        flag = j;
+        roomIndex = j;
         break;
       }
     }
 
-    for (let i = 0; count < black; i++) {
-      const cardLength = DB[i].table.blackCards.length;
-      const randomCard = Math.floor(Math.random() * cardLength);
-      getCards = [...getCards, { color: "black", value: randomCard }];
-      DB[i].table.blackCards.splice(randomCard, 1);
+    for (let i = 0; i < black; i++) {
+      let cardLength = DB[roomIndex].table.blackCards.length;
+      let CardIndex = Math.floor(Math.random() * Number(cardLength));
+      let randomCard = DB[roomIndex].table.blackCards[CardIndex];
+      getCards = [
+        ...getCards,
+        { color: "black", value: Number(randomCard), isOpen: false },
+      ];
+      DB[roomIndex].table.blackCards.splice(CardIndex, 1);
     }
 
-    // for (let i = 0; count < black; i++) {
-    //   const number = Math.floor(Math.random() * 12);
+    for (let i = 0; i < white; i++) {
+      let cardLength = DB[roomIndex].table.whiteCards.length;
+      let CardIndex = Math.floor(Math.random() * Number(cardLength));
+      let randomCard = DB[roomIndex].table.whiteCards[CardIndex];
+      getCards = [
+        ...getCards,
+        { color: "white", value: Number(randomCard), isOpen: false },
+      ];
+      DB[roomIndex].table.whiteCards.splice(CardIndex, 1);
+    }
 
-    //   if (data[flag].blackCardList[number] === null) {
-    //     data[flag].blackCardList[number] = userId;
-    //     arr1 = [...arr1, { color: "black", value: number }];
-    //     count++;
-    //   }
-    // }
+    getCards
+      .sort((a, b) => a.value - b.value)
+      .sort((a, b) => {
+        if (a.value === b.value) {
+          if (a.color < b.color) return -1;
+          else if (b.color < a.color) return 1;
+          else return 0;
+        }
+      });
 
-    // count = 0;
-    // for (let i = 0; count < whiteCard; i++) {
-    //   number = Math.floor(Math.random() * 12);
+    for (let i = 0; i < 4; i++) {
+      if (DB[roomIndex].users[i].userId === userId) {
+        uesrIndex = i;
+        break;
+      }
+    }
+    DB[roomIndex].users[uesrIndex].hand = getCards;
+    console.log(getCards);
+    myCard(getCards);
 
-    //   if (data[flag].whiteCardList[number] === null) {
-    //     data[flag].whiteCardList[number] = userId;
-    //     arr1 = [...arr1, { color: "white", value: number }];
-    //     count++;
-    //   }
-    // }
-
-    // countBlack = 0;
-    // countWhite = 0;
-    // for (let i = 0; i < data[flag].blackCardList.length; i++) {
-    //   if (data[flag].blackCardList[i] !== null) {
-    //     countBlack++;
-    //   }
-
-    //   if (data[flag].whiteCardList[i] !== null) {
-    //     countWhite++;
-    //   }
-    // }
-    // socket["card"] = arr1;
-
-    // socket.card
-    //   .sort((a, b) => a.value - b.value)
-    //   .sort((a, b) => {
-    //     if (a.value === b.value) {
-    //       if (a.color < b.color) return -1;
-    //       else if (b.color < a.color) return 1;
-    //       else return 0;
-    //     }
-    //   });
+    // FIXME 나머지 사람들의 카드
+    let sendAllData = {};
 
     // const userIdAndCard = { userId, cards: socket.card };
 
