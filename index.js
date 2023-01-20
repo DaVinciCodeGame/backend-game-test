@@ -41,7 +41,7 @@ let readyCount = 0;
 let DB = [
   {
     roomId: 0,
-
+    turn:0,
     table: {
       blackCards: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       whiteCards: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
@@ -198,7 +198,6 @@ io.on("connection", async (socket) => {
       }
     }
     DB[roomIndex].users[uesrIndex].hand = getCards;
-    console.log(getCards);
     myCard(getCards);
 
     // FIXME 나머지 사람들의 카드
