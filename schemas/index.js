@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 dotenv.config();
-
+mongoose.set("strictQuery", false);
 // mongoDB 연결하는 함수 route 진행
 const connect = () => {
   mongoose

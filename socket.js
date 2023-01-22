@@ -83,7 +83,7 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("you-joined", async ({ userID, roomID }) => {
-    socket["userID"] = userID;
+    
     userCount = (userCount + 1) % 4;
     console.log("유저 입장", userCount, ":::::", socket.id);
 
@@ -202,9 +202,22 @@ io.on("connection", async (socket) => {
     DB[roomIndex].users[uesrIndex].hand = getCards;
     myCard(getCards);
 
-    // FIXME 나머지 사람들의 카드
+    // FIXME 나머지 사람들의 카드 보내주기
     let sendAllData = {};
 
+  // TODO: 뽑을 카드가 없다.
+    if(DB.table.blackCards.length === 0 && DB.table.whiteCards.length === 0){
+      const turn = DB[flag].turn;
+
+      socket.to(socket.data.roomId).emit("no-cards-to-draw", turn)
+    }
+
+    
+    // TODO: 뽑을 카드가 있는가?
+    // TODO: 양쪽 색이 다 있는가 ? -> client 색 정하기 socket.to(roomId).emit("select-color", )
+    // TODO: 뽑힌 카드가 조커인가? 숫자인가?
+    // TODO: 각 요청마다 현재 게임을 진행중인 사람의 턴 첨부
+    
     // const userIdAndCard = { userId, cards: socket.card };
 
     // for (let i = 0; i < data.length; i++) {
@@ -225,6 +238,7 @@ io.on("connection", async (socket) => {
   socket.on("join", (roomId) => {
     console.log(roomId);
     socket.join(roomId);
+    socket.data.roomId = roomId
   });
 
   socket.on("sending signal", (payload) => {
