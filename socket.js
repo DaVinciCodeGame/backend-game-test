@@ -209,7 +209,7 @@ io.on("connection", async (socket) => {
     if(DB.table.blackCards.length === 0 && DB.table.whiteCards.length === 0){
       const turn = DB[flag].turn;
 
-      socket.to(socket.data.roomId).emit("no-cards-to-draw", turn)
+      socket.to(socket.data.roomId).emit("no-cards-to-draw", "SELECT_CARD_AS_SECURITY", turn)
     }
 
     
@@ -234,6 +234,11 @@ io.on("connection", async (socket) => {
     //     .emit("allUsersFirstCard", data, { countBlack, countWhite });
     // }
   });
+
+  socket.on("select-card-as-security",(userId, color, value) => {
+    socket.data.security= {color:color, value:value};
+    io.to(socket.Id).emit("select-target")
+  })
 
   socket.on("join", (roomId) => {
     console.log(roomId);
