@@ -8,7 +8,7 @@ const { log } = require("console");
 const { type } = require("os");
 const connect = require("./schemas");
 const { mongoose } = require("mongoose");
-//connect();
+//-connect();
 
 dotenv.config();
 app.use(cors());

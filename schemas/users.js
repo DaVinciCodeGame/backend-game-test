@@ -7,12 +7,12 @@ const userSchema = new mongoose.Schema({
   },
 
   sids: {
-    type: Number,
+    type: String,
     required: true,
   },
 
   username: {
-    type: Number,
+    type: String,
     required: true,
   },
 
@@ -27,8 +27,6 @@ const userSchema = new mongoose.Schema({
   },
 
   hand: [{ color: String, value: Number, isOpen: String }],
-
-
 });
 
 module.exports = mongoose.model("user", userSchema);
